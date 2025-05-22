@@ -1,17 +1,17 @@
 import axiosInstance from "../helpers/axiosInstance";
 
 export interface Attendance {
-  id?: string;
-  date: string;
+  sn: number;
+  dateTime: string;
   status: string;
 }
 
-export const fetchAttendance = async (): Promise<Attendance[]> => {
-  const res = await axiosInstance.get("/attendance");
-  return res.data;
+export const fetchAttendanceByUser = async (userId: string): Promise<Attendance[]> => {
+  const res = await axiosInstance.get(`/api/v1/attendance/${userId}`);
+  return res.data.records;
 };
 
 export const addAttendance = async (data: { date: string; status: string }): Promise<Attendance> => {
-  const res = await axiosInstance.post("/attendance", data);
+  const res = await axiosInstance.post("/api/v1/attendance", data);
   return res.data;
 };

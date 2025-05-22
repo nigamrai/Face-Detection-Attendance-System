@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { login } from '../api/authApi';
+import { useNavigate } from "react-router-dom";
+import HomeLayout from "../layouts/HomeLayout";
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -7,7 +9,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
+  const navigate=useNavigate();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -18,6 +20,8 @@ const Login: React.FC = () => {
       setSuccess("Login successful!");
       // Optionally store token or user info here
       localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      navigate('/attendances');
       // Redirect or update UI as needed
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
@@ -27,9 +31,10 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-gray-100 p-8">
-      <div className="bg-white rounded-2xl shadow-2xl p-10 min-w-[340px] flex flex-col items-center gap-5 relative">
-        <h1 className="text-2xl font-bold text-blue-600 mb-1 tracking-wide">Face Detection Attendance System</h1>
+ <HomeLayout>
+     <div className="min-h-[700px] flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-gray-100 p-8">
+      <div className="bg-white rounded-2xl shadow-2xl p-10 min-w-[340px] flex flex-col items-center gap-5 relative w-[500px]">
+        {/* <h1 className="text-2xl font-bold text-blue-600 mb-1 tracking-wide">Face Detection Attendance System</h1> */}
         <p className="text-gray-800 text-base tracking-wide mb-3">Please login to continue</p>
         <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
           <input
@@ -58,6 +63,7 @@ const Login: React.FC = () => {
         </form>
       </div>
     </div>
+ </HomeLayout>
   );
 };
 

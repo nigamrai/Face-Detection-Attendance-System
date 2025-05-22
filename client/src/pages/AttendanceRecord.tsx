@@ -1,27 +1,23 @@
-import React, { useEffect, useState, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { fetchAttendance, addAttendance, Attendance } from "../api/attendanceApi";
+import React, { useEffect, useState } from "react";
+import { fetchAttendanceByUser, Attendance } from "../api/attendanceApi";
 import HomeLayout from "../layouts/HomeLayout";
 
 const AttendanceRecord: React.FC = () => {
-  const navigate = useNavigate();
   const [attendance, setAttendance] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [date, setDate] = useState("");
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
 
-  // Fetch attendance records
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
+    const userStr = localStorage.getItem("user");
+    if (!token || !userStr) {
       setIsLoggedIn(false);
       setLoading(false);
       return;
     }
     setIsLoggedIn(true);
-    fetchAttendance()
+    const user = JSON.parse(userStr);
+    fetchAttendanceByUser(user.id)
       .then((data) => {
         setAttendance(data);
         setLoading(false);
@@ -32,92 +28,63 @@ const AttendanceRecord: React.FC = () => {
       });
   }, []);
 
-  // Add new attendance record
-  const handleAdd = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!date || !status) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    try {
-      const newRecord = await addAttendance({ date, status });
-      setAttendance((prev) => [...prev, newRecord]);
-      setDate("");
-      setStatus("");
-    } catch {
-      setError("Failed to add record.");
-    }
-  };
-
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <HomeLayout>
+        <div className="attendance-record">
+          <h2>Attendance Record</h2>
+          <p>Loading...</p>
+        </div>
+      </HomeLayout>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <HomeLayout>
+        <div className="attendance-record">
+          <h2>Attendance Record</h2>
+          <p>Please log in to view your attendance record.</p>
+        </div>
+      </HomeLayout>
+    );
   }
 
   return (
     <HomeLayout>
-     
-      {isLoggedIn ? (
-        <div className="p-8">
-          <h2 className="text-xl font-semibold mb-4">Attendance Record</h2>
-          <form onSubmit={handleAdd} className="mb-6 flex gap-4 items-end">
-            <div>
-              <label className="block mb-1 font-medium">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="border rounded px-3 py-2"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-1 font-medium">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="border rounded px-3 py-2"
-                required
-              >
-                <option value="">Select</option>
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="py-2 px-6 bg-green-600 text-white rounded font-semibold shadow hover:bg-green-700"
-            >
-              Add Record
-            </button>
-          </form>
-          {error && <div className="text-red-500 mb-4">{error}</div>}
-          {attendance.length === 0 ? (
-            <p>No attendance records found.</p>
-          ) : (
-            <table className="min-w-full bg-white rounded shadow">
+      <div className="flex flex-col items-center justify-center min-h-[80vh] bg-gradient-to-br from-blue-50 to-purple-100 py-8">
+        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-8">
+          <h2 className="text-3xl font-bold mb-6 text-center text-indigo-700 tracking-tight drop-shadow">Attendance Record</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-separate border-spacing-y-2">
               <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">Date</th>
-                  <th className="py-2 px-4 border-b">Status</th>
+                <tr className="bg-indigo-100">
+                  <th className="py-3 px-6 text-left rounded-tl-xl font-semibold text-indigo-700">SN</th>
+                  <th className="py-3 px-6 text-left font-semibold text-indigo-700">Date</th>
+                  <th className="py-3 px-6 text-left font-semibold text-indigo-700">Time</th>
+                  <th className="py-3 px-6 text-left rounded-tr-xl font-semibold text-indigo-700">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {attendance.map((record, idx) => (
-                  <tr key={record.id || idx}>
-                    <td className="py-2 px-4 border-b">{record.date}</td>
-                    <td className="py-2 px-4 border-b">{record.status}</td>
+                {attendance.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-gray-500">No attendance records found.</td>
                   </tr>
-                ))}
+                ) : (
+                  attendance.map((record, idx) => (
+                    <tr key={record.sn} className={idx % 2 === 0 ? "bg-white hover:bg-indigo-50 transition" : "bg-indigo-50 hover:bg-indigo-100 transition"}>
+                      <td className="py-3 px-6 rounded-l-xl font-medium text-gray-700">{record.sn}</td>
+                      <td className="py-3 px-6 text-gray-600">{new Date(record.dateTime).toLocaleDateString('en-CA')}</td>
+                      <td className="py-3 px-6 text-gray-600">{new Date(record.dateTime).toLocaleTimeString('en-GB', { hour12: false })}</td>
+                      <td className={`py-3 px-6 rounded-r-xl font-semibold ${record.status === 'Present' ? 'text-green-600' : record.status === 'Absent' ? 'text-red-500' : 'text-yellow-600'}`}>{record.status}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      ) : (
-        <div className="p-8 text-center">
-          <p className="text-lg">Please log in to view or add your attendance record.</p>
-        </div>
-      )}
+      </div>
     </HomeLayout>
   );
 };

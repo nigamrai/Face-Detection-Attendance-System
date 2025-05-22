@@ -1,4 +1,4 @@
-import User from '../models/user.model.js';
+import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 
 export const login = async (req, res) => {
@@ -9,11 +9,14 @@ export const login = async (req, res) => {
         }
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials.' });
+            return res.status(401).json({ message: 'Invalid email.' });
         }
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid credentials.' });
+        // const isMatch = await user.comparePassword(password);
+        // if (!isMatch) {
+        //     return res.status(401).json({ message: 'Invalid credentials.' });
+        // }
+        if(user.password!==password){
+            return res.status(401).json({ message: 'Invalid password.' });
         }
         const token = jwt.sign(
             { userId: user._id, email: user.email },
