@@ -90,7 +90,10 @@ try:
     
     # Step 9: Compare each detected face in the uploaded image against reference encodings
     def euclidean_distance(a, b):
-        # Compute Euclidean distance between two 1D arrays
+        # Compute Euclidean distance between two 1D arrays (vectors)
+        # For each pair of elements (x, y) in a and b, compute (x - y) ** 2
+        # Sum all squared differences
+        # Take the square root of the sum to get the Euclidean distance
         return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
 
     threshold = 0.6  # You may adjust this threshold based on your use case

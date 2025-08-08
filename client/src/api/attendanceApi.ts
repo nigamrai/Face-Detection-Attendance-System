@@ -2,7 +2,8 @@ import axiosInstance from "../helpers/axiosInstance";
 
 export interface Attendance {
   sn: number;
-  dateTime: string;
+  checkIn?: string | null;
+  checkOut?: string | null;
   status: string;
 }
 

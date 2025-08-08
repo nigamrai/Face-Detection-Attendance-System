@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { login } from '../api/authApi';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from "react-router-dom";
+import { login } from '../api/authApi';
 import HomeLayout from "../layouts/HomeLayout";
+import { setAuthData } from '../store/authSlice';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -10,6 +12,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const navigate=useNavigate();
+  const dispatch = useDispatch();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -18,10 +21,16 @@ const Login: React.FC = () => {
     try {
       const response = await login({ email: username, password });
       setSuccess("Login successful!");
-      // Optionally store token or user info here
+      // Store token and user info in Redux
+      console.log(response);
+      dispatch(setAuthData({ user: response.user, token: response.token}));
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
-      navigate('/attendances');
+      if (response.user.role === 'admin') {
+        navigate('/admin');
+      } else if (response.user.role === 'user') {
+        navigate('/attendances');
+      }
       // Redirect or update UI as needed
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed. Please try again.");

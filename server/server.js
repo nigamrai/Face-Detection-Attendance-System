@@ -1,20 +1,20 @@
+import cors from 'cors';
+import dotenv from 'dotenv';
 import express from 'express';
 import connectDB from './config/DBConfig.js';
-import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes.js';
-import cors from 'cors';
 import attendanceRouter from './routes/attendaceRoutes.js';
-import upload from './middlewares/multer.middleware.js';
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-import User from './models/User.js';
-
+import authRoutes from './routes/authRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import {v2 as cloudinary} from 'cloudinary';
 // Polyfill for __dirname in ES modules
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 dotenv.config();
+cloudinary.config({
+    cloud_name: 'dacafjeag',
+    api_key: '574477448174444',
+    api_secret: 'yngLYLzcTwiXqVirsqR0rBKr-GM'
+});
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,10 +24,10 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
-
 // Mount authentication routes
 app.use('/api/v1/auth', authRoutes);
 app.use("/api/v1/attendance",attendanceRouter);
+app.use('/api/v1/admin', adminRoutes);
 // app.post('/api/v1/attendance', upload.single('face'), async (req, res) => {
 //     let tempFilePath = '';
     

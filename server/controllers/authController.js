@@ -1,5 +1,5 @@
-import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 export const login = async (req, res) => {
     try {
@@ -11,6 +11,7 @@ export const login = async (req, res) => {
         if (!user) {
             return res.status(401).json({ message: 'Invalid email.' });
         }
+        console.log(user);
         // const isMatch = await user.comparePassword(password);
         // if (!isMatch) {
         //     return res.status(401).json({ message: 'Invalid credentials.' });
@@ -23,7 +24,7 @@ export const login = async (req, res) => {
             process.env.JWT_SECRET || 'your_jwt_secret',
             { expiresIn: '1d' }
         );
-        res.status(200).json({ token, user: { email: user.email, name: user.name, id: user._id } });
+        res.status(200).json({ token, user: { email: user.email, name: user.name, id: user._id,role:user.role } });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
     }

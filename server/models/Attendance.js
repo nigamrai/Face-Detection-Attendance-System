@@ -1,22 +1,27 @@
 import mongoose from 'mongoose';
 
+// Define the Attendance schema with check-in and check-out functionality
 const attendanceSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    time: {
-        type: Date,
-        default: Date.now
+    checkIn: {
+        type: Date, // Stores check-in time
+        default: null
+    },
+    checkOut: {
+        type: Date, // Stores check-out time
+        default: null
     },
     status: {
         type: String,
-        enum: ['Present', 'Absent','Late'],
+        enum: ['Present', 'Absent', 'Late','Early'],
         default: 'Absent'
     }
 }, {
-    timestamps: true
+    timestamps: true // Adds createdAt and updatedAt fields
 });
 
 // Export the Attendance model

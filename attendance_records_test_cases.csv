@@ -1,0 +1,11 @@
+SN,Test Case,Test Input,Expected Result,Outcome
+1,View attendance records (admin),Login as admin and navigate to 'View Records',Table displays all user attendance data,Pass
+2,View attendance records (user),Login as registered user and navigate to 'My Attendance',Table displays only the user's own records,Pass
+3,Access attendance without login,Navigate to 'My Attendance' without logging in,Redirect to login or access denied,Pass
+4,Filter records by date,Select a date range and apply filter,Records matching the date range are displayed,Pass
+5,Filter records by user (admin),Admin selects a specific user from dropdown,Only selected user’s records are shown,Pass
+6,Sort records by date,Click 'Date' column header to sort,Records sorted in ascending or descending order,Pass
+7,Export attendance to CSV (admin),Click 'Export CSV' button,CSV file of all attendance records downloaded,Pass
+8,Search attendance by name,Enter partial or full name in search bar,Matching records displayed dynamically,Pass
+9,Attempt to delete record (unauthorized user),User clicks delete on their own record,Error: 'Unauthorized action',Pass
+10,Backend failure while fetching records,Simulate server/API error,Error: 'Unable to fetch records',Pass
