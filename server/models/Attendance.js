@@ -11,11 +11,16 @@ const attendanceSchema = new mongoose.Schema({
         type: Date, // Stores check-in time
         default: null
     },
+    checkInStatus:{
+         type: String,
+        enum: ['Present', 'Absent', 'Late','Early'],
+        default: 'Absent'
+    },
     checkOut: {
         type: Date, // Stores check-out time
         default: null
     },
-    status: {
+    checkOutStatus: {
         type: String,
         enum: ['Present', 'Absent', 'Late','Early'],
         default: 'Absent'

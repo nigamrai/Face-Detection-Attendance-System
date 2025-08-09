@@ -78,6 +78,7 @@ if len(sys.argv) < 2:
 # Step 8: Load and process the uploaded image (first argument)
 uploaded_image_path = sys.argv[1]
 # print(f"Loading uploaded image: {uploaded_image_path}", flush=True)
+import json as _json
 try:
     # Load the uploaded image file
     uploaded_image = face_recognition.load_image_file(uploaded_image_path)
@@ -85,41 +86,32 @@ try:
     uploaded_face_encodings = face_recognition.face_encodings(uploaded_image)
     
     if len(uploaded_face_encodings) == 0:
-        print(f"No face detected in the uploaded image: {uploaded_image_path}")
-        sys.exit(1)
+        print(_json.dumps({"results": []}))
+        sys.exit(0)
     
     # Step 9: Compare each detected face in the uploaded image against reference encodings
     def euclidean_distance(a, b):
-        # Compute Euclidean distance between two 1D arrays (vectors)
-        # For each pair of elements (x, y) in a and b, compute (x - y) ** 2
-        # Sum all squared differences
-        # Take the square root of the sum to get the Euclidean distance
         return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
 
     threshold = 0.6  # You may adjust this threshold based on your use case
 
+    results = []
     for i, uploaded_encoding in enumerate(uploaded_face_encodings):
         try:
-            # Compute Euclidean distances to each reference encoding
             distances = [euclidean_distance(uploaded_encoding, ref_enc) for ref_enc in reference_encodings]
-            # Find the minimum distance and its index
             min_distance = min(distances)
             min_index = distances.index(min_distance)
 
-            # print(f"Face distances for face {i+1} in {uploaded_image_path}: {distances}")
-
             if min_distance < threshold:
-                # Match found
                 filename = os.path.basename(reference_image_paths[min_index])
                 user_id = filename.split('_')[1].split('.')[0]  # Extract user ID from filename
-                # print(f"Match found for user: {user_id}")
-                print(user_id)
-                sys.exit(0)
+                results.append({"userId": user_id, "success": True})
             else:
-                print(f"Face {i+1} is not a match (min distance: {min_distance:.4f})")
+                results.append({"userId": None, "success": False})
         except Exception as e:
-            print(f"Error processing uploaded image: {e}")
-            sys.exit(1)
+            results.append({"userId": None, "success": False, "error": str(e)})
+    print(_json.dumps({"results": results}))
+    sys.exit(0)
 except Exception as e:
-    print(f"Error loading uploaded image: {e}")
+    print(_json.dumps({"results": [], "error": str(e)}))
     sys.exit(1)

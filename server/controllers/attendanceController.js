@@ -37,7 +37,8 @@ export const recognizeFace = async (req, res) => {
     const users = await User.find();
     const userData = users.map(user => ({
         _id: user._id.toString(),
-        avatar: user.avatar.secure_url
+        avatar: user.avatar.secure_url,
+        name: user.name
     }));
     const userDataString = JSON.stringify(userData);
     const pythonProcess = spawn('python3', ['face_match.py', imagePath, userDataString]);
@@ -61,78 +62,79 @@ export const recognizeFace = async (req, res) => {
             });
         }
 
-        const userId = outputData.trim();
-        if (!userId) {
-            return res.json({ 
-                result: outputData.trim(),
-                attendance: 'No match found'
-            });
+        let parsed;
+        try {
+            parsed = JSON.parse(outputData);
+        } catch (e) {
+            return res.status(500).json({ result: 'Error parsing face match output', error: outputData });
+        }
+        if (!parsed.results || !Array.isArray(parsed.results) || parsed.results.length === 0) {
+            return res.json({ results: [] });
         }
 
-        try {
-            // Find today's attendance record for this user
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            const todayEnd = new Date();
-            todayEnd.setHours(23, 59, 59, 999);
+        // For each matched face, process attendance
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
 
+        const results = [];
+        for (const result of parsed.results) {
+            if (!result.success || !result.userId) {
+                results.push({ success: false });
+                continue;
+            }
+            const userId = result.userId;
             let attendance = await Attendance.findOne({
                 userId: userId,
                 createdAt: { $gte: todayStart, $lt: todayEnd }
             });
-
-            if (action === 'checkin') {
-                if (attendance && attendance.checkIn) {
-                    return res.status(200).json({
-                        success: true,
-                        result: 'Already checked in today',
-                        attendance: attendance
-                    });
+            let user = users.find(u => u._id.toString() === userId);
+            let name = user ? user.name : 'User';
+            let statusMsg = '';
+            let success = true;
+            try {
+                if (action === 'checkin') {
+                    if (attendance && attendance.checkIn) {
+                        statusMsg = 'Already checked in today';
+                    } else if (!attendance) {
+                        attendance = new Attendance({
+                            userId,
+                            checkIn: new Date(),
+                            checkInStatus: 'Present'
+                        });
+                        await attendance.save();
+                        statusMsg = 'Check-in successful';
+                    } else {
+                        attendance.checkIn = new Date();
+                        attendance.checkInStatus = 'Present';
+                        await attendance.save();
+                        statusMsg = 'Check-in successful';
+                    }
+                } else if (action === 'checkout') {
+                    if (!attendance || !attendance.checkIn) {
+                        statusMsg = 'Check-in required before check-out';
+                        success = false;
+                    } else if (attendance.checkOut) {
+                        statusMsg = 'Already checked out today';
+                    } else {
+                        attendance.checkOut = new Date();
+                        attendance.checkOutStatus = 'Present';
+                        await attendance.save();
+                        statusMsg = 'Check-out successful';
+                    }
                 }
-                if (!attendance) {
-                    attendance = new Attendance({
-                        userId,
-                        checkIn: new Date(),
-                        status: 'Present'
-                    });
-                } else {
-                    attendance.checkIn = new Date();
-                    attendance.status = 'Present';
-                }
-                await attendance.save();
-                return res.json({ 
-                    success: true,
-                    result: 'Check-in successful',
-                    attendance
-                });
-            } else if (action === 'checkout') {
-                if (!attendance || !attendance.checkIn) {
-                    return res.status(400).json({
-                        success: false,
-                        result: 'Check-in required before check-out'
-                    });
-                }
-                if (attendance.checkOut) {
-                    return res.status(200).json({
-                        success: true,
-                        result: 'Already checked out today',
-                        attendance
-                    });
-                }
-                attendance.checkOut = new Date();
-                await attendance.save();
-                return res.json({ 
-                    success: true,
-                    result: 'Check-out successful',
-                    attendance
-                });
+            } catch (error) {
+                statusMsg = 'Failed to update attendance';
+                success = false;
             }
-        } catch (error) {
-            return res.status(500).json({ 
-                success: false,
-                result: 'Failed to update attendance',
-                error: error.message
+            results.push({
+                userId,
+                name,
+                success,
+                status: statusMsg
             });
         }
+        return res.json({ results });
     });
 };
